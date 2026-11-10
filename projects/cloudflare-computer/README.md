@@ -14,30 +14,26 @@ Cloudflare Computer's strongest idea is that a logical computer does not have to
 
 ## Core architecture
 
-The authoritative filesystem lives in a Durable Object backed by SQLite. Execution backends attach to that state as needed.
+The authoritative virtual filesystem lives in a Durable Object backed by SQLite. Execution backends attach lazily to that state through a single runtime surface.
 
-Current backends include:
+Current upstream backends include:
 
-- full Linux container,
-- isolate shell via Dynamic Worker,
-- isolate JavaScript via Dynamic Worker.
+- **Container** — full Linux userland, real binaries, network, with the workspace projected through FUSE and synchronized by `computerd`;
+- **Isolate shell** — `just-bash` inside a Dynamic Worker, talking directly to the authoritative workspace over Workers RPC;
+- **Codemode** — ECMAScript modules in a fresh Dynamic Worker with workspace-backed filesystem access and host modules.
 
 ```text
-authoritative durable filesystem
-             │
-     ┌───────┼────────┐
-     ▼       ▼        ▼
- isolate   isolate   Linux
- shell       JS      container
+authoritative durable workspace state
+                │
+       workspace.runtime.exec(...)
+                │
+      ┌─────────┼──────────┐
+      ▼         ▼          ▼
+  container   isolate    codemode
+   / FUSE      shell       JS
 ```
 
-The container path projects the filesystem through FUSE while `computerd` synchronizes state over RPC.
-
-## Why it matters
-
-This is a useful candidate abstraction for cloud-hosted agent workspaces where agents are idle much of the time and should not require permanently active Linux environments.
-
-The architectural bet is:
+The core architectural bet remains:
 
 ```text
 durable logical state + replaceable execution
@@ -49,27 +45,53 @@ instead of:
 one logical agent = one permanently running machine
 ```
 
+## Why it matters
+
+The model allows a logical workspace to persist independently of which execution engine is active.
+
+That makes several escalation strategies possible:
+
+- run cheap shell-like work in an isolate;
+- run structured code in codemode;
+- attach a full Linux container only when native binaries or a richer userland are required.
+
+This is not just suspend/resume. It is **execution-class substitution over one authoritative workspace**.
+
 ## Relationship to Cloudflare OS
 
-Cloudflare Computer is not currently the execution layer underneath Cloudflare OS, but both explore the same broader Workers-native direction:
+Cloudflare Computer and Cloudflare OS remain separate projects, but both explore the broader Workers-native direction:
 
 - isolate-first execution,
 - persistent state independent of compute lifetime,
-- escalation to heavier runtimes only when required.
+- escalation to heavier runtimes only when required,
+- explicit security and egress boundaries.
 
-Cloudflare OS is the product/security experiment; Computer is a cleaner lower-level computer abstraction experiment.
+Cloudflare OS is the product/security dogfooding environment; Computer is a cleaner lower-level computer abstraction.
 
-## Current status
+## Current status — November 2026
 
-Preview / experimental; the upstream project explicitly says it is not production-ready.
+The upstream README now says the top-level `@cloudflare/computer` package is **suitable for production use**, while several components and backends — including the container path and Worker shell pieces — remain experimental.
+
+The repository also now includes examples for:
+
+- container and Worker-shell execution,
+- codemode,
+- matching egress policies across backends,
+- MCP,
+- agent integrations,
+- runtime comparison,
+- artifacts and generated projects.
+
+The correct reading is therefore no longer “the whole project is preview-only”; maturity is component-specific.
 
 ## Experiments to run
 
 - run the tutorial end-to-end;
-- compare worker shell and container execution on the same task;
+- compare codemode, Worker shell, and container execution on the same task;
 - run real git/npm/build workloads;
-- destroy the container and verify filesystem persistence;
-- inspect network / egress enforcement;
+- destroy/recreate execution and verify workspace persistence;
+- inspect egress enforcement across backends;
 - measure backend activation latency;
+- benchmark metadata-heavy vs sequential filesystem behavior;
 - evaluate cost versus one persistent VM per agent;
-- explore whether GPU execution could become another backend.
+- explore whether GPU execution should be another backend or remain outside this abstraction.

@@ -13,19 +13,21 @@ Each project page should point to the abstraction that appears most valuable or 
 | [Capability-mediated authority](capability-mediated-authority.md) | Cloudflare OS / Gatekeepers | How should an agent receive external authority without inheriting all of a user's credentials? |
 | [Durable state + ephemeral execution](durable-state-ephemeral-execution.md) | Cloudflare Computer | Does an agent need a permanently running VM, or only durable state plus execution on demand? |
 | [Actor-worker multiplexing](actor-worker-multiplexing.md) | Agent Substrate | How can many long-lived logical agents share a smaller pool of physical workers? |
+| [In-process agent OS](in-process-agent-os.md) | Rivet agentOS | When can a POSIX-like agent computer be implemented inside the application process rather than as a separate VM/container? |
 | [Agent as a system service](agent-as-system-service.md) | Claw OS | What changes when an agent is part of a real machine's system layer rather than trapped in an app sandbox? |
 | [Unified human-agent event log](unified-human-agent-event-log.md) | Buzz | How should humans, agents, git activity, workflows, and approvals share identity and history? |
 | [Human-centric host as agent substrate](human-centric-host.md) | Omarchy | When does a developer desktop make sense as the physical host for an always-on agent? |
 
 ## Why abstraction-first?
 
-Calling all of these systems "Agent OS" hides the important differences.
+Calling all of these systems “Agent OS” hides the important differences.
 
 For example:
 
 - Cloudflare OS is primarily interesting for capability security and AI-generated application isolation.
 - Cloudflare Computer is primarily interesting for separating durable computer state from compute.
-- Agent Substrate is primarily interesting for lifecycle and multiplexing at scale.
+- Agent Substrate is primarily interesting for lifecycle, zero-trust isolation, and multiplexing at scale.
+- Rivet agentOS is primarily interesting for moving the “computer” boundary inside the application process with WASM/V8.
 - Claw OS is primarily interesting for making the agent a first-class participant in a physical host.
 - Buzz is primarily interesting for organizational identity and shared event history.
 - Omarchy is primarily a host-environment reference, not an agent runtime.
