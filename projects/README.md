@@ -6,7 +6,8 @@ Project pages are implementation studies. The repository is organized **abstract
 |---|---|---|
 | [Cloudflare OS](cloudflare-os/README.md) | human-agent workspace / capability OS | [Capability-mediated authority](../abstractions/capability-mediated-authority.md) |
 | [Cloudflare Computer](cloudflare-computer/README.md) | virtual agent computer | [Durable state + ephemeral execution](../abstractions/durable-state-ephemeral-execution.md) |
-| [Agent Substrate](agent-substrate/README.md) | scheduler / lifecycle infrastructure | [Actor-worker multiplexing](../abstractions/actor-worker-multiplexing.md) |
+| [Agent Substrate](agent-substrate/README.md) | zero-trust runtime / scheduler / lifecycle infrastructure | [Actor-worker multiplexing](../abstractions/actor-worker-multiplexing.md) |
+| [Rivet agentOS](rivet-agent-os/README.md) | in-process agent computer / sandbox library | [In-process agent OS](../abstractions/in-process-agent-os.md) |
 | [Claw OS](claw-os/README.md) | physical-machine agent system layer | [Agent as a system service](../abstractions/agent-as-system-service.md) |
 | [Buzz](buzz/README.md) | human-agent collaboration plane | [Unified human-agent event log](../abstractions/unified-human-agent-event-log.md) |
 | [Omarchy](omarchy/README.md) | human-centric host OS | [Human-centric host as agent substrate](../abstractions/human-centric-host.md) |
@@ -21,3 +22,7 @@ For a new contributor, a project page should answer four things:
 2. What is its strongest abstraction?
 3. What evidence comes from real use rather than marketing/docs?
 4. What should be tested next?
+
+## Naming note
+
+“Agent OS” is now used by multiple unrelated projects. This gallery therefore uses qualified names such as **Rivet agentOS** and classifies systems by architecture rather than by name.
