@@ -24,6 +24,8 @@ Questions:
 - device access
 - remote administration
 
+For a dedicated physical agent node, native Linux is a cleaner experimental baseline than WSL2 because it removes an additional Windows/Hyper-V boundary from networking, devices, systemd, cgroups, Docker/containerd, GPU, and recovery behavior.
+
 Related abstraction: [Human-centric host as agent substrate](../abstractions/human-centric-host.md).
 
 ## 2. Agent System Layer
@@ -44,24 +46,37 @@ Related abstraction: [Agent as a system service](../abstractions/agent-as-system
 
 ## 3. Computer / Sandbox Abstraction
 
-Defines the logical "computer" available to an agent independently of any one physical machine.
+Defines the logical “computer” available to an agent independently of any one physical machine.
 
-Strong reference: [Cloudflare Computer](../projects/cloudflare-computer/README.md).
+Strong references:
+
+- [Cloudflare Computer](../projects/cloudflare-computer/README.md)
+- [Rivet agentOS](../projects/rivet-agent-os/README.md)
 
 Typical primitives:
 
 - filesystem
-- shell / JavaScript / Linux execution
+- shell / JavaScript / Linux-like execution
 - durable state
-- egress policy
+- process model
+- networking / egress policy
 - artifacts
 
-A key design question is whether the computer is:
+A key 2026 distinction is that the logical computer can be implemented through very different execution boundaries:
 
-- one persistent VM, or
-- durable state plus ephemeral execution.
+### 3A. Durable state + pluggable execution
+
+Cloudflare Computer keeps authoritative workspace state in a Durable Object / SQLite-backed filesystem and attaches container, isolate-shell, or codemode execution as needed.
 
 Related abstraction: [Durable state + ephemeral execution](../abstractions/durable-state-ephemeral-execution.md).
+
+### 3B. In-process OS-like sandbox
+
+Rivet agentOS places a virtual filesystem, process table, pipes, PTYs, virtual networking, WASM utilities, and V8-isolated JavaScript inside the host application process.
+
+This avoids a separate VM/container for many tasks, while retaining the option to escalate to a full sandbox when a browser, native binary, or full Linux environment is required.
+
+Related abstraction: [In-process agent OS](../abstractions/in-process-agent-os.md).
 
 ## 4. Agent Runtime / Harness
 
@@ -77,6 +92,11 @@ Typical responsibilities:
 - retries
 - compaction
 - reasoning/tool-result lifecycle
+- approvals
+- scheduling / cron in some runtimes
+- session persistence in some runtimes
+
+Important distinction: a runtime/harness may call itself an “Agent OS” while still primarily belonging here. Naming is not architecture.
 
 Important cross-cutting lesson from the Cloudflare OS experiment: model compatibility is part of runtime design. Context windows, output budgeting, tool schemas, reasoning representations, and provider adapters can all leak through a supposedly generic model interface.
 
@@ -95,6 +115,10 @@ Typical responsibilities:
 - routing
 - snapshots
 - autoscaling
+- identity
+- network mediation
+
+Agent Substrate's 1.0 design also makes security part of orchestration: gVisor or microVM isolation, per-agent identity, default-deny networking, and credential injection outside the sandbox.
 
 Related abstraction: [Actor-worker multiplexing](../abstractions/actor-worker-multiplexing.md).
 
@@ -114,10 +138,11 @@ Questions:
 - human approval
 - simulated vs synchronous approval
 - revocation / delegation
+- whether secrets ever enter untrusted agent execution
+
+A notable complementary pattern appears in Agent Substrate: credentials can be injected by an egress gateway outside the sandbox, allowing outbound requests without placing reusable secrets inside the agent environment.
 
 Related abstraction: **[Capability-mediated authority](../abstractions/capability-mediated-authority.md)**.
-
-This layer deserves special treatment because autonomous agents are neither ordinary applications nor ordinary human users. A useful security model should allow a human principal to delegate narrow authority to an accountable agent without handing over every credential the human possesses.
 
 ## 7. Human-Agent Workspace / Organizational Control Plane
 
@@ -154,11 +179,16 @@ Some questions span every layer:
 - cost
 - security
 - recovery
+- secret/credential placement
+- cold start / resume latency
+- escalation from lightweight to heavyweight execution
 
 ## A useful distinction
 
 A project can operate at one layer while contributing an abstraction relevant to several layers.
 
 Cloudflare OS is a good example. As a product it sits near the human-agent workspace layer, but its most valuable contribution to this gallery is currently the Gatekeeper capability model in the security plane. It also serves as a dogfooding/reference environment for lower-level Workers primitives.
+
+Agent Substrate is another example: it is primarily scheduler/runtime infrastructure, but its external credential-injection model is also directly relevant to the security plane.
 
 This taxonomy is intentionally provisional and should evolve as more systems are tested.
